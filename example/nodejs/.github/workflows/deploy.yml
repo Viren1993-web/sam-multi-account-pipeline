@@ -1,0 +1,46 @@
+name: Deploy (Node.js)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write   # required for OIDC to assume the pipeline role
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to all accounts
+    runs-on: ubuntu-latest
+
+    container:
+      # Pull the shared deployment image from Amazon Public ECR.
+      # Pin to a specific tag in production to avoid unexpected changes.
+      image: public.ecr.aws/z7q5l7x5/sam-pipeline:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        env:
+          # ── Target accounts ────────────────────────────────────────────────
+          # Store AWS_ACCOUNT_IDS as a GitHub Actions Variable (Settings → Variables)
+          # so account IDs never appear in workflow YAML.
+          # Format: "ACCOUNT_ID:REGION,..."
+          # e.g.  "111122223333:us-east-1,444455556666:ap-southeast-2"
+          AWS_ACCOUNT_IDS: ${{ vars.AWS_ACCOUNT_IDS }}
+
+          # ── Runtime ────────────────────────────────────────────────────────
+          RUNTIME_LANGUAGE: nodejs
+          NODE_VERSION: "24"
+
+          # ── SAM options ────────────────────────────────────────────────────
+          STACK_NAME: example-nodejs-service
+
+          # ── OIDC (injected automatically by GitHub Actions) ────────────────
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+          CI: "true"
+        run: python -m sam_pipeline

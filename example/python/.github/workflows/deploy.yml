@@ -1,0 +1,38 @@
+name: Deploy (Python)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to all accounts
+    runs-on: ubuntu-latest
+
+    container:
+      image: public.ecr.aws/z7q5l7x5/sam-pipeline:latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        env:
+          # Store AWS_ACCOUNT_IDS as a GitHub Actions Variable (Settings → Variables)
+          # Format: "ACCOUNT_ID:REGION,..."
+          AWS_ACCOUNT_IDS: ${{ vars.AWS_ACCOUNT_IDS }}
+
+          RUNTIME_LANGUAGE: python
+          PYTHON_VERSION: "3.14.0"
+
+          STACK_NAME: example-python-service
+
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+          CI: "true"
+        run: python -m sam_pipeline

@@ -1,0 +1,47 @@
+---
+name: SAM Multi-Account Pipeline
+image: public.ecr.aws/z7q5l7x5/sam-pipeline:latest
+description: A reusable Docker-based runner to deploy AWS SAM applications across multiple AWS accounts
+category: Deployment
+variables:
+  - name: AWS_ACCOUNT_ID
+    description: Single AWS account ID to deploy to. Mutually exclusive with AWS_ACCOUNT_IDS.
+    default: null
+  - name: AWS_ACCOUNT_IDS
+    description: >
+      Comma-separated list of AWS accounts to deploy to. Each entry is
+      "ACCOUNT_ID:REGION", e.g. "123456789012:us-east-1,987654321098:ap-southeast-2".
+      Mutually exclusive with AWS_ACCOUNT_ID.
+      Recommended: store this value as a GitHub Actions Variable (vars.AWS_ACCOUNT_IDS)
+      so account IDs are not hardcoded in workflow YAML.
+    default: null
+  - name: AWS_REGION
+    description: AWS region (used when AWS_ACCOUNT_ID is set).
+    default: "us-east-1"
+  - name: DEPLOYER_ROLE_NAME
+    description: IAM role name to assume in each target account.
+    default: "DeployerAccess"
+  - name: RUNTIME_LANGUAGE
+    description: Runtime language of the SAM application ("nodejs" or "python").
+    default: "nodejs"
+  - name: NODE_VERSION
+    description: Node.js version to use when RUNTIME_LANGUAGE is nodejs.
+    default: "20"
+  - name: PYTHON_VERSION
+    description: Python version to use when RUNTIME_LANGUAGE is python.
+    default: "3.14.0"
+  - name: WORKING_DIRECTORY
+    description: Path to the SAM project root (relative to repository root).
+    default: "."
+  - name: STACK_NAME
+    description: CloudFormation stack name. Defaults to the repository name.
+    default: null
+  - name: SAM_ADDOPTS
+    description: Additional arguments passed verbatim to `sam deploy`.
+    default: ""
+  - name: DEBUG
+    description: Enable verbose logging.
+    default: false
+repository: https://github.com/Viren1993-web/sam-multi-account-pipeline
+maintainer:
+  name: Viren Patel

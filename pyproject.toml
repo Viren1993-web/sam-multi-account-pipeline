@@ -1,0 +1,68 @@
+[project]
+name = "sam_pipeline"
+version = "1.0.0"
+description = "A reusable AWS SAM deployment runner for multi-account deployments"
+readme = "README.md"
+authors = [
+  { name = "Viren Patel" }
+]
+requires-python = ">=3.14"
+dynamic = ["dependencies", "optional-dependencies"]
+
+[project.urls]
+Homepage = "https://github.com/Viren1993-web/sam-multi-account-pipeline"
+Repository = "https://github.com/Viren1993-web/sam-multi-account-pipeline"
+
+[tool.setuptools.packages.find]
+include = ["sam_pipeline*"]
+
+[tool.setuptools.package-data]
+sam_pipeline = ["scripts/*.sh"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies = { dev = { file = ["requirements-dev.txt"] } }
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+include = [
+  "pyproject.toml",
+  "sam_pipeline/**/*.py",
+  "tests/**/*.py",
+]
+line-length = 100
+lint.select = ["ALL"]
+lint.ignore = [
+  "ANN002",
+  "ANN003",
+  "D104",
+  "D107",
+  "D407",
+  "D100",
+  "D101",
+  "D102",
+  "D103",
+  "D203",
+  "D213",
+  "D401",
+  "EM101",
+  "EM102",
+  "FIX002",
+  "S603",
+  "TD002",
+  "TD003",
+  "TRY003",
+]
+
+[tool.mypy]
+files = ["sam_pipeline"]
+python_version = "3.14"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=sam_pipeline --cov-report=term-missing"
