@@ -1,0 +1,5 @@
+ruff
+mypy
+pytest
+pytest-cov
+moto[sts]~=5.0

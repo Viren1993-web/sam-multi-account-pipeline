@@ -1,0 +1,77 @@
+name: Publish Docker Image
+
+on:
+  push:
+    tags:
+      # Matches semver tags: 1.0.0, 1.2.3, etc.
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+jobs:
+  publish:
+    name: Build and push to Amazon Public ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_NUMBER }}:role/DeployerAccess-Github
+          aws-region: us-east-1   # Public ECR is only available in us-east-1
+
+      - name: Login to Amazon Public ECR
+        run: |
+          aws ecr-public get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin public.ecr.aws
+
+      - name: Build Docker image
+        env:
+          IMAGE_URI: public.ecr.aws/${{ vars.ECR_ALIAS }}/sam-pipeline
+          TAG: ${{ github.ref_name }}
+        run: |
+          DOCKER_BUILDKIT=1 docker build \
+            --build-arg DOCKER_IMAGE_TAG="${TAG}" \
+            --cache-from "${IMAGE_URI}:latest" \
+            --tag "${IMAGE_URI}:${TAG}" \
+            --tag "${IMAGE_URI}:latest" \
+            .
+
+      - name: Push Docker image
+        env:
+          IMAGE_URI: public.ecr.aws/${{ vars.ECR_ALIAS }}/sam-pipeline
+          TAG: ${{ github.ref_name }}
+        run: |
+          docker push "${IMAGE_URI}:${TAG}"
+          docker push "${IMAGE_URI}:latest"
+
+  lint-and-test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: make install-dev
+
+      - name: Lint
+        run: make lint
+
+      - name: Type check
+        run: make type-check
+
+      - name: Test
+        run: make test

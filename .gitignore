@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+.env
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+test-results/
+
+# macOS
+.DS_Store
+
+# Docker
+.dockerignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# AWS SAM
+.aws-sam/
+samconfig.toml
+packaged.yaml
