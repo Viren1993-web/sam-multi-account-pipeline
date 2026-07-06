@@ -141,7 +141,8 @@ def _get_oidc_token() -> str:
     if not request_url:
         raise OSError(
             "ACTIONS_ID_TOKEN_REQUEST_URL not set. "
-            "Ensure the job has `permissions: { id-token: write }` and runs in GitHub Actions."
+            "Ensure the job has `permissions: { id-token: write }` "
+            "and runs in GitHub Actions."
         )
 
     if not request_token:
@@ -151,7 +152,9 @@ def _get_oidc_token() -> str:
         )
 
     try:
-        logger.debug("Fetching OIDC token from GitHub Actions token endpoint")
+        logger.debug(
+            "Fetching OIDC token from GitHub Actions token endpoint"
+        )
         req = urllib.request.Request(  # noqa: S310
             f"{request_url}&audience=sts.amazonaws.com",
             headers={"Authorization": f"Bearer {request_token}"},
@@ -161,7 +164,11 @@ def _get_oidc_token() -> str:
             logger.debug("Successfully retrieved OIDC token from GitHub Actions")
             return str(data["value"])
     except urllib.error.HTTPError as exc:
-        logger.error("HTTP error when fetching OIDC token: %s %s", exc.code, exc.reason)
+        logger.error(
+            "HTTP error when fetching OIDC token: %s %s",
+            exc.code,
+            exc.reason,
+        )
         raise OSError(
             f"HTTP {exc.code} when fetching OIDC token from GitHub Actions. "
             f"Reason: {exc.reason}"
@@ -169,7 +176,8 @@ def _get_oidc_token() -> str:
     except (urllib.error.URLError, json.JSONDecodeError, KeyError) as exc:
         logger.error("Failed to fetch OIDC token from GitHub Actions: %s", exc)
         raise OSError(
-            f"Failed to fetch OIDC token from GitHub Actions. "
-            f"Ensure ACTIONS_ID_TOKEN_REQUEST_URL is accessible from the container. "
+            "Failed to fetch OIDC token from GitHub Actions. "
+            "Ensure ACTIONS_ID_TOKEN_REQUEST_URL is accessible "
+            "from the container. "
             f"Error: {exc}"
         ) from exc
