@@ -15,7 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: public.ecr.aws/z7q5l7x5/sam-pipeline:latest
+      # Update to match your ECR_ALIAS set in GitHub repo Variables
+      image: public.ecr.aws/${{ vars.ECR_ALIAS }}/sam-pipeline:1.0.0
 
     steps:
       - name: Checkout
@@ -28,7 +29,7 @@ jobs:
           AWS_ACCOUNT_IDS: ${{ vars.AWS_ACCOUNT_IDS }}
 
           RUNTIME_LANGUAGE: python
-          PYTHON_VERSION: "3.14.0"
+          PYTHON_VERSION: "3.13.1"
 
           STACK_NAME: example-python-service
 

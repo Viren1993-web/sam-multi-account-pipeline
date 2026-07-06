@@ -15,9 +15,8 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      # Pull the shared deployment image from Amazon Public ECR.
-      # Pin to a specific tag in production to avoid unexpected changes.
-      image: public.ecr.aws/z7q5l7x5/sam-pipeline:latest
+      # Update to match your ECR_ALIAS set in GitHub repo Variables
+      image: public.ecr.aws/${{ vars.ECR_ALIAS }}/sam-pipeline:1.0.0
 
     steps:
       - name: Checkout
@@ -34,7 +33,7 @@ jobs:
 
           # ── Runtime ────────────────────────────────────────────────────────
           RUNTIME_LANGUAGE: nodejs
-          NODE_VERSION: "24"
+          NODE_VERSION: "20"
 
           # ── SAM options ────────────────────────────────────────────────────
           STACK_NAME: example-nodejs-service
