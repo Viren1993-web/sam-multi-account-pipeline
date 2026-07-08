@@ -38,6 +38,7 @@ lint.select = ["ALL"]
 lint.ignore = [
   "ANN002",
   "ANN003",
+  "COM812",
   "D104",
   "D107",
   "D407",
@@ -65,4 +66,3 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=sam_pipeline --cov-report=term-missing"

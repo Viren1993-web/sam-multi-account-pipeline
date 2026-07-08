@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import cerberus
 
@@ -87,7 +87,7 @@ class SamPipeline:
 
         return validator.document  # type: ignore[no-any-return]
 
-    def _get(self, key: str) -> Any:
+    def _get(self, key: str) -> str | None:
         return self._vars.get(key)
 
     def _configure_logging(self) -> None:
@@ -101,10 +101,7 @@ class SamPipeline:
 
     def _log_variables(self) -> None:
         sensitive = {"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN"}
-        lines = [
-            f"  {k}: {'***' if k in sensitive else v}"
-            for k, v in sorted(self._vars.items())
-        ]
+        lines = [f"  {k}: {'***' if k in sensitive else v}" for k, v in sorted(self._vars.items())]
         logger.info("Configuration:\n%s", "\n".join(lines))
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -125,7 +122,7 @@ class SamPipeline:
 
         raise ValueError(
             "No target accounts configured. "
-            "Set AWS_ACCOUNT_ID or AWS_ACCOUNT_IDS environment variable."
+            "Set AWS_ACCOUNT_ID or AWS_ACCOUNT_IDS environment variable.",
         )
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -138,9 +135,9 @@ class SamPipeline:
         script = (self._scripts_dir / "setup-environment.sh").as_posix()
         run_command(
             script,
-            self._get("RUNTIME_LANGUAGE"),
-            self._get("NODE_VERSION"),
-            self._get("PYTHON_VERSION"),
+            cast("str", self._get("RUNTIME_LANGUAGE")),
+            cast("str", self._get("NODE_VERSION")),
+            cast("str", self._get("PYTHON_VERSION")),
         )
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -159,9 +156,13 @@ class SamPipeline:
         )
 
         cred_env = session_to_env(session, target.region, target.account_id)
-        env = os.environ.copy() | cred_env | {
-            "DEBUG": "true" if bool_from_env(self._get("DEBUG")) else "false",
-        }
+        env = (
+            os.environ.copy()
+            | cred_env
+            | {
+                "DEBUG": "true" if bool_from_env(self._get("DEBUG")) else "false",
+            }
+        )
 
         stack_name = self._resolve_stack_name()
         logger.info("Deploying stack '%s' to %s", stack_name, target.account_id)
@@ -186,16 +187,17 @@ class SamPipeline:
                 action,
                 stack_name,
                 region,
-                self._get("RUNTIME_LANGUAGE"),
-                self._get("NODE_VERSION"),
-                self._get("PYTHON_VERSION"),
+                cast("str", self._get("RUNTIME_LANGUAGE")),
+                cast("str", self._get("NODE_VERSION")),
+                cast("str", self._get("PYTHON_VERSION")),
                 self._get("WORKING_DIRECTORY") or ".",
                 self._get("SAM_ADDOPTS") or "",
                 env=env,
             )
         except SubprocessError as exc:
             if exc.returncode == _EXIT_WORKING_DIR_NOT_FOUND:
-                raise WorkingDirectoryNotFoundError(self._get("WORKING_DIRECTORY")) from exc
+                working_dir = self._get("WORKING_DIRECTORY") or "."
+                raise WorkingDirectoryNotFoundError(working_dir) from exc
             if exc.returncode == _EXIT_NVM_NOT_FOUND:
                 raise NvmNotFoundError from exc
             if action == "build":

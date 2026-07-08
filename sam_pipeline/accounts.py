@@ -43,16 +43,17 @@ def parse_account_ids(raw: str, default_region: str) -> list[AccountTarget]:
     """
     targets: list[AccountTarget] = []
     for entry in raw.split(","):
-        entry = entry.strip()
-        if not entry:
+        stripped = entry.strip()
+        if not stripped:
             continue
-        match = _ENTRY_RE.match(entry)
+        match = _ENTRY_RE.match(stripped)
         if not match:
             raise InvalidAccountConfigError(
-                f"Invalid account entry '{entry}'. "
+                f"Invalid account entry '{stripped}'. "
                 "Expected format: ACCOUNT_ID or ACCOUNT_ID:REGION "
-                "(e.g. '123456789012:us-east-1')."
+                "(e.g. '123456789012:us-east-1').",
             )
-        account_id, region = match.group(1), match.group(2) or default_region
+        account_id = match.group(1)
+        region = match.group(2) or default_region
         targets.append(AccountTarget(account_id=account_id, region=region))
     return targets

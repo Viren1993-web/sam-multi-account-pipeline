@@ -7,6 +7,7 @@ import logging
 import os
 import urllib.error
 import urllib.request
+from typing import Any, cast
 
 import boto3
 
@@ -56,20 +57,27 @@ def assume_role_session(
         except OSError as exc:
             raise ValueError(
                 "Failed to retrieve OIDC token in CI environment. "
-                "Ensure ACTIONS_ID_TOKEN_REQUEST_URL and ACTIONS_ID_TOKEN_REQUEST_TOKEN "
-                "are set (GitHub Actions) or BITBUCKET_STEP_OIDC_TOKEN (Bitbucket Pipelines)."
+                "Ensure ACTIONS_ID_TOKEN_REQUEST_URL and "
+                "ACTIONS_ID_TOKEN_REQUEST_TOKEN are set (GitHub Actions) "
+                "or BITBUCKET_STEP_OIDC_TOKEN (Bitbucket Pipelines).",
             ) from exc
 
-        response = sts.assume_role_with_web_identity(
-            RoleArn=role_arn,
-            RoleSessionName=ROLE_SESSION_NAME,
-            WebIdentityToken=token,
-            DurationSeconds=7200,
+        response = cast(
+            "dict[str, Any]",
+            sts.assume_role_with_web_identity(
+                RoleArn=role_arn,
+                RoleSessionName=ROLE_SESSION_NAME,
+                WebIdentityToken=token,
+                DurationSeconds=7200,
+            ),
         )
     else:
-        response = sts.assume_role(
-            RoleArn=role_arn,
-            RoleSessionName=ROLE_SESSION_NAME,
+        response = cast(
+            "dict[str, Any]",
+            sts.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName=ROLE_SESSION_NAME,
+            ),
         )
 
     credentials = response["Credentials"]
@@ -97,14 +105,14 @@ def session_to_env(session: boto3.Session, region: str, account_id: str) -> dict
     if credentials is None:
         raise ValueError("Failed to retrieve credentials from the boto3 session")
 
-    resolved = credentials.resolve()
+    frozen = credentials.get_frozen_credentials()
     return {
         "AWS_REGION": region,
         "AWS_DEFAULT_REGION": region,
         "AWS_ACCOUNT_ID": account_id,
-        "AWS_ACCESS_KEY_ID": resolved.access_key,
-        "AWS_SECRET_ACCESS_KEY": resolved.secret_key,
-        "AWS_SESSION_TOKEN": resolved.token or "",
+        "AWS_ACCESS_KEY_ID": cast("str", frozen.access_key),
+        "AWS_SECRET_ACCESS_KEY": cast("str", frozen.secret_key),
+        "AWS_SESSION_TOKEN": frozen.token or "",
     }
 
 
@@ -116,8 +124,8 @@ def session_to_env(session: boto3.Session, region: str, account_id: str) -> dict
 def _oidc_token_available() -> bool:
     """Return True if any known OIDC token env var is set."""
     return bool(
-        os.environ.get("ACTIONS_ID_TOKEN_REQUEST_URL")       # GitHub Actions
-        or os.environ.get("BITBUCKET_STEP_OIDC_TOKEN")       # Bitbucket Pipelines
+        os.environ.get("ACTIONS_ID_TOKEN_REQUEST_URL")  # GitHub Actions
+        or os.environ.get("BITBUCKET_STEP_OIDC_TOKEN"),  # Bitbucket Pipelines
     )
 
 
@@ -142,18 +150,18 @@ def _get_oidc_token() -> str:
         raise OSError(
             "ACTIONS_ID_TOKEN_REQUEST_URL not set. "
             "Ensure the job has `permissions: { id-token: write }` "
-            "and runs in GitHub Actions."
+            "and runs in GitHub Actions.",
         )
 
     if not request_token:
         raise OSError(
             "ACTIONS_ID_TOKEN_REQUEST_TOKEN not set. "
-            "This should be automatically set by GitHub Actions."
+            "This should be automatically set by GitHub Actions.",
         )
 
     try:
         logger.debug(
-            "Fetching OIDC token from GitHub Actions token endpoint"
+            "Fetching OIDC token from GitHub Actions token endpoint",
         )
         req = urllib.request.Request(  # noqa: S310
             f"{request_url}&audience=sts.amazonaws.com",
@@ -164,20 +172,19 @@ def _get_oidc_token() -> str:
             logger.debug("Successfully retrieved OIDC token from GitHub Actions")
             return str(data["value"])
     except urllib.error.HTTPError as exc:
-        logger.error(
+        logger.exception(
             "HTTP error when fetching OIDC token: %s %s",
             exc.code,
             exc.reason,
         )
         raise OSError(
-            f"HTTP {exc.code} when fetching OIDC token from GitHub Actions. "
-            f"Reason: {exc.reason}"
+            f"HTTP {exc.code} when fetching OIDC token from GitHub Actions. Reason: {exc.reason}",
         ) from exc
     except (urllib.error.URLError, json.JSONDecodeError, KeyError) as exc:
-        logger.error("Failed to fetch OIDC token from GitHub Actions: %s", exc)
+        logger.exception("Failed to fetch OIDC token from GitHub Actions")
         raise OSError(
             "Failed to fetch OIDC token from GitHub Actions. "
             "Ensure ACTIONS_ID_TOKEN_REQUEST_URL is accessible "
             "from the container. "
-            f"Error: {exc}"
+            f"Error: {exc}",
         ) from exc

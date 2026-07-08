@@ -5,24 +5,24 @@ SSH_PRIVATE_KEY   ?= $(HOME)/.ssh/id_rsa
 .PHONY: install install-dev lint format type-check test docker-build docker-shell
 
 install:
-	pip install .
+	python3 -m pip install .
 
 install-dev:
-	pip install -e .[dev]
+	python3 -m pip install -e .[dev]
 
 lint:
-	ruff check .
-	ruff format --check .
+	python3 -m ruff check .
+	python3 -m ruff format --check .
 
 format:
-	ruff check --fix .
-	ruff format .
+	python3 -m ruff check --fix .
+	python3 -m ruff format .
 
 type-check:
-	mypy
+	python3 -m mypy
 
 test:
-	python -m pytest
+	python3 -m pytest
 
 all: lint type-check test
 
