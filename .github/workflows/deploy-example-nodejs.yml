@@ -1,9 +1,12 @@
-name: Deploy (Node.js)
+name: Deploy Example (Node.js)
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "sam-pipeline image tag to use"
+        required: false
+        default: "1.0.6"
 
 permissions:
   id-token: write   # required for OIDC to assume the pipeline role
@@ -11,12 +14,15 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to all accounts
+    name: Deploy Node.js example to all accounts
     runs-on: ubuntu-latest
 
     container:
-      # Update to match your ECR_ALIAS set in GitHub repo Variables
-      image: public.ecr.aws/${{ vars.ECR_ALIAS }}/sam-pipeline:1.0.6
+      image: public.ecr.aws/${{ vars.ECR_ALIAS }}/sam-pipeline:${{ inputs.image_tag || '1.0.6' }}
+
+    defaults:
+      run:
+        working-directory: example/nodejs
 
     steps:
       - name: Checkout
@@ -26,9 +32,7 @@ jobs:
         env:
           # ── Target accounts ────────────────────────────────────────────────
           # Store AWS_ACCOUNT_IDS as a GitHub Actions Variable (Settings → Variables)
-          # so account IDs never appear in workflow YAML.
-          # Format: "ACCOUNT_ID:REGION,..."
-          # e.g.  "111122223333:us-east-1,444455556666:ap-southeast-2"
+          # Format: "ACCOUNT_ID:REGION,..."  e.g. "111122223333:us-east-1"
           AWS_ACCOUNT_IDS: ${{ vars.AWS_ACCOUNT_IDS }}
 
           # ── Runtime ────────────────────────────────────────────────────────
@@ -37,6 +41,7 @@ jobs:
 
           # ── SAM options ────────────────────────────────────────────────────
           STACK_NAME: example-nodejs-service
+          WORKING_DIRECTORY: example/nodejs
 
           # ── OIDC (injected automatically by GitHub Actions) ────────────────
           ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
