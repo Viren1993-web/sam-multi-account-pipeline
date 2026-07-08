@@ -71,7 +71,7 @@ deploy a SAM application:
 | AWS CLI | Credential operations |
 | nvm | Manage Node.js versions |
 | pyenv | Manage Python versions |
-| Python 3.14 | Runtime for the pipeline engine |
+| Python 3.13 | Runtime for the pipeline engine |
 
 Because the image is **publicly available**, any GitHub Actions workflow can pull it
 without authentication. There is no per-project installation step.
@@ -97,7 +97,7 @@ The Dockerfile uses a **multi-stage build** to keep the final image lean.
 FROM ubuntu:26.04 AS builder
 
 ARG NVM_VERSION=v0.39.7
-ARG PYTHON_VERSION=3.14.0
+ARG PYTHON_VERSION=3.13.1
 
 ENV NVM_DIR=/opt/nvm
 ENV PYENV_ROOT=/opt/pyenv
@@ -285,7 +285,7 @@ env:
 ```yaml
 env:
   RUNTIME_LANGUAGE: python
-  PYTHON_VERSION: "3.14.0"
+  PYTHON_VERSION: "3.13.1"
 ```
 
 Internally, the `setup-environment.sh` script installs the correct version using nvm
@@ -366,7 +366,7 @@ No SAM CLI installation. No credential management. Just environment variables.
 | `DEPLOYER_ROLE_NAME` | No | `DeployerAccess` | IAM role name to assume in each account |
 | `RUNTIME_LANGUAGE` | No | `nodejs` | `nodejs` or `python` |
 | `NODE_VERSION` | No | `24` | Node.js version (nvm version string) |
-| `PYTHON_VERSION` | No | `3.14.0` | Python version (pyenv version string) |
+| `PYTHON_VERSION` | No | `3.13.1` | Python version (pyenv version string) |
 | `WORKING_DIRECTORY` | No | `.` | Path to the SAM project root |
 | `STACK_NAME` | No | repo name | CloudFormation stack name |
 | `SAM_ADDOPTS` | No | `""` | Extra arguments passed to `sam deploy` |

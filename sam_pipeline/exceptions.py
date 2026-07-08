@@ -1,5 +1,7 @@
 """Custom exceptions for the SAM pipeline."""
 
+from typing import Any
+
 
 class SamPipelineError(Exception):
     """Base exception for the SAM pipeline."""
@@ -17,7 +19,7 @@ class SamDeployError(SamPipelineError):
 
     def __init__(self, account_id: str, returncode: int) -> None:
         super().__init__(
-            f"sam deploy to account {account_id} failed with return code {returncode}"
+            f"sam deploy to account {account_id} failed with return code {returncode}",
         )
 
 
@@ -35,7 +37,7 @@ class NvmNotFoundError(SamPipelineError):
 
     def __init__(self) -> None:
         super().__init__(
-            "NVM not found. Ensure the Docker image was built correctly and NVM_DIR is set."
+            "NVM not found. Ensure the Docker image was built correctly and NVM_DIR is set.",
         )
 
 
@@ -53,5 +55,5 @@ class InvalidAccountConfigError(SamPipelineError):
 class ValidationError(SamPipelineError):
     """Input variable validation failed."""
 
-    def __init__(self, errors: dict) -> None:
+    def __init__(self, errors: dict[str, Any]) -> None:
         super().__init__(f"Validation failed: {errors}")

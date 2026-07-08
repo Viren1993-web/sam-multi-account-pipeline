@@ -1,6 +1,8 @@
 """Validation schema for pipeline input variables."""
 
-schema: dict = {
+from typing import Any
+
+schema: dict[str, Any] = {
     "AWS_ACCOUNT_ID": {
         "type": "string",
         "required": False,

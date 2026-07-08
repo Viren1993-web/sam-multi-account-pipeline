@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from sam_pipeline.exceptions import SubprocessError
 
@@ -29,12 +30,13 @@ def run_command(
 
     """
     command_str = " ".join(args)
-    result = subprocess.run(  # noqa: S603
+    result = subprocess.run(
         list(args),
         env=env,
         text=True,
         stdout=sys.stdout,
         stderr=sys.stderr,
+        check=False,
     )
     if check and result.returncode != 0:
         raise SubprocessError(returncode=result.returncode, command=command_str)
@@ -61,10 +63,12 @@ def get_repo_name() -> str:
     if slug:
         return slug
 
-    return os.path.basename(os.getcwd())
+    return Path.cwd().name
 
 
-def bool_from_env(value: str | bool | None) -> bool:
+def bool_from_env(
+    value: str | bool | None,  # noqa: FBT001
+) -> bool:
     """Convert an environment variable string to a boolean."""
     if isinstance(value, bool):
         return value

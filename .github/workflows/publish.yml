@@ -2,6 +2,8 @@ name: Publish Docker Image
 
 on:
   push:
+    branches:
+      - main
     tags:
       # Matches semver tags: 1.0.0, 1.2.3, etc.
       - '[0-9]+.[0-9]+.[0-9]+'
@@ -22,7 +24,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_NUMBER }}:role/DeployerAccess-Github
+          role-to-assume: arn:aws:iam::587402071946:role/DeployerAccess-Github
           aws-region: us-east-1   # Public ECR is only available in us-east-1
 
       - name: Login to Amazon Public ECR
@@ -61,7 +63,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: "3.13"
           cache: pip
 
       - name: Install dev dependencies
