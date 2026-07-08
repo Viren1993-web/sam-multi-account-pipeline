@@ -68,7 +68,7 @@ def assume_role_session(
                 RoleArn=role_arn,
                 RoleSessionName=ROLE_SESSION_NAME,
                 WebIdentityToken=token,
-                DurationSeconds=7200,
+                DurationSeconds=1800,  # 30 minutes — sufficient for any SAM build+deploy
             ),
         )
     else:

@@ -34,6 +34,7 @@ jobs:
           # Store AWS_ACCOUNT_IDS as a GitHub Actions Variable (Settings → Variables)
           # Format: "ACCOUNT_ID:REGION,..."  e.g. "111122223333:us-east-1"
           AWS_ACCOUNT_IDS: ${{ vars.AWS_ACCOUNT_IDS }}
+          DEPLOYER_ROLE_NAME: ${{ vars.DEPLOYER_ROLE_NAME }}
 
           # ── Runtime ────────────────────────────────────────────────────────
           RUNTIME_LANGUAGE: nodejs
