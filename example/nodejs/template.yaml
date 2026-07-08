@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  example-nodejs-service
+  nodejs-service
   A simple Hello World Lambda function — Node.js example for sam-pipeline.
 
 Globals:
@@ -16,9 +16,14 @@ Resources:
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: HelloWorldFunction
       CodeUri: src/
       Handler: handler.handler
       Description: Returns a greeting.
+      Environment:
+        Variables:
+          GREETING_MESSAGE: "Hello from AWS Lambda!"
+          ENVIRONMENT: Prod
       Events:
         HelloWorld:
           Type: Api
