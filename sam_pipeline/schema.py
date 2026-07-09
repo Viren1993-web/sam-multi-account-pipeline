@@ -32,7 +32,7 @@ schema: dict[str, Any] = {
     "NODE_VERSION": {
         "type": "string",
         "required": False,
-        "default": "20",
+        "default": "24",
     },
     "PYTHON_VERSION": {
         "type": "string",
@@ -43,6 +43,14 @@ schema: dict[str, Any] = {
         "type": "string",
         "required": False,
         "default": ".",
+    },
+    "STAGE": {
+        "type": "string",
+        "required": False,
+    },
+    "ENV_FILE": {
+        "type": "string",
+        "required": False,
     },
     "STACK_NAME": {
         "type": "string",

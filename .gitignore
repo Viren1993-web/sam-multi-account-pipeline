@@ -31,5 +31,4 @@ test-results/
 
 # AWS SAM
 .aws-sam/
-samconfig.toml
 packaged.yaml

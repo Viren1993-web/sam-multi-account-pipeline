@@ -17,12 +17,12 @@ source_nvm() {
 
 sam_build() {
   local working_directory=${1:-.}
-  local build_command="sam build"
+  local -a build_command=(sam build)
 
-  echo "▶ ${build_command}"
+  echo "▶ ${build_command[*]}"
   (
     cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 2; }
-    eval "${build_command}"
+    "${build_command[@]}"
   )
 }
 
@@ -32,19 +32,26 @@ sam_deploy() {
   local sam_addopts=$3
   local working_directory=${4:-.}
 
-  local deploy_command="sam deploy \
-    --stack-name ${stack_name} \
-    --region ${region} \
-    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-    --no-confirm-changeset \
-    --no-fail-on-empty-changeset \
-    --resolve-s3 \
-    ${sam_addopts}"
+  local -a deploy_command=(
+    sam deploy
+    --stack-name "${stack_name}"
+    --region "${region}"
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+    --no-confirm-changeset
+    --no-fail-on-empty-changeset
+    --resolve-s3
+  )
 
-  echo "▶ ${deploy_command}"
+  if [[ -n "${sam_addopts}" ]]; then
+    local -a extra_opts=()
+    read -r -a extra_opts <<<"${sam_addopts}"
+    deploy_command+=("${extra_opts[@]}")
+  fi
+
+  echo "▶ ${deploy_command[*]}"
   (
     cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 2; }
-    eval "${deploy_command}"
+    "${deploy_command[@]}"
   )
 }
 

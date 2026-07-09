@@ -1,0 +1,31 @@
+version = 0.1
+
+[dev.deploy.parameters]
+stack_name = "example-nodejs-service-dev"
+region = "ap-southeast-2"
+s3_prefix = "example-nodejs-service/dev"
+resolve_s3 = true
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+image_repositories = []
+tags = "service=example-nodejs environment=dev managed-by=sam-pipeline"
+
+[stg.deploy.parameters]
+stack_name = "example-nodejs-service-stg"
+region = "ap-southeast-2"
+s3_prefix = "example-nodejs-service/stg"
+resolve_s3 = true
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+image_repositories = []
+tags = "service=example-nodejs environment=stg managed-by=sam-pipeline"
+
+[prod.deploy.parameters]
+stack_name = "example-nodejs-service-prod"
+region = "ap-southeast-2"
+s3_prefix = "example-nodejs-service/prod"
+resolve_s3 = true
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND"
+image_repositories = []
+tags = "service=example-nodejs environment=prod managed-by=sam-pipeline"

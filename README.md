@@ -299,6 +299,35 @@ if [[ "${runtime_language}" == "python" ]]; then
 fi
 ```
 
+### Stage-Based `samconfig.toml` + Secret Parameters
+
+For production-style deployments (dev/stg/prod), set `STAGE` and pass `SAM_ADDOPTS`
+to select a named SAM config environment plus runtime parameter overrides.
+
+```yaml
+env:
+  RUNTIME_LANGUAGE: nodejs
+  NODE_VERSION: "24"
+  WORKING_DIRECTORY: .
+  STAGE: dev
+  STACK_NAME: eyecue-heartbeat-service-sam-${{ env.STAGE }}
+  SAM_ADDOPTS: >-
+    --config-file samconfig.toml
+    --config-env $STAGE
+    --parameter-overrides
+    Stage=${{ env.STAGE }}
+    ${{ secrets.SAM_PARAMETER_OVERRIDES }}
+```
+
+Set GitHub Secret `SAM_PARAMETER_OVERRIDES.
+
+The runner now supports both:
+
+- `STAGE=<env>` -> auto-loads `WORKING_DIRECTORY/.env.<STAGE>` (for example `.env.dev`)
+- `ENV_FILE=<path>` -> explicitly loads a dotenv file (takes precedence over `STAGE`)
+
+Environment values already provided by CI are preserved and are not overridden by dotenv files.
+
 ---
 
 ## Repository Structure
@@ -368,8 +397,10 @@ No SAM CLI installation. No credential management. Just environment variables.
 | `NODE_VERSION` | No | `24` | Node.js version (nvm version string) |
 | `PYTHON_VERSION` | No | `3.13.1` | Python version (pyenv version string) |
 | `WORKING_DIRECTORY` | No | `.` | Path to the SAM project root |
+| `STAGE` | No | — | Stage name used to load `.env.<STAGE>` and in deploy args |
+| `ENV_FILE` | No | — | Explicit dotenv path to load (absolute or relative to `WORKING_DIRECTORY`) |
 | `STACK_NAME` | No | repo name | CloudFormation stack name |
-| `SAM_ADDOPTS` | No | `""` | Extra arguments passed to `sam deploy` |
+| `SAM_ADDOPTS` | No | `""` | Extra `sam deploy` args (for example `--config-env` and `--parameter-overrides`) |
 | `DEBUG` | No | `false` | Enable verbose logging |
 
 ---
