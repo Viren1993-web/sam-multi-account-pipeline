@@ -34,9 +34,18 @@ jobs:
           # ── Runtime ────────────────────────────────────────────────────────
           RUNTIME_LANGUAGE: nodejs
           NODE_VERSION: "20"
+          STAGE: dev
 
           # ── SAM options ────────────────────────────────────────────────────
-          STACK_NAME: example-nodejs-service
+          STACK_NAME: example-nodejs-service-sam-dev
+          WORKING_DIRECTORY: example/nodejs
+          SAM_ADDOPTS: >-
+            --config-file samconfig.toml
+            --config-env $STAGE
+            --parameter-overrides
+            Stage=${{ env.STAGE }}
+            ${{ secrets.SAM_PARAMETER_OVERRIDES }}
+          # Store as one space-separated line in GitHub Secret: SAM_PARAMETER_OVERRIDES
 
           # ── OIDC (injected automatically by GitHub Actions) ────────────────
           ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}

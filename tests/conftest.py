@@ -20,6 +20,8 @@ def _clear_env(monkeypatch: pytest.MonkeyPatch) -> None:
         "NODE_VERSION",
         "PYTHON_VERSION",
         "WORKING_DIRECTORY",
+        "STAGE",
+        "ENV_FILE",
         "SAM_ADDOPTS",
         "DEBUG",
         "CI",

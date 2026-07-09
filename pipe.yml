@@ -26,18 +26,24 @@ variables:
     default: "nodejs"
   - name: NODE_VERSION
     description: Node.js version to use when RUNTIME_LANGUAGE is nodejs.
-    default: "20"
+    default: "24"
   - name: PYTHON_VERSION
     description: Python version to use when RUNTIME_LANGUAGE is python.
     default: "3.14.0"
   - name: WORKING_DIRECTORY
     description: Path to the SAM project root (relative to repository root).
     default: "."
+  - name: STAGE
+    description: Deployment stage name used for stage-specific env loading (e.g. dev/stg/prod).
+    default: null
+  - name: ENV_FILE
+    description: Optional dotenv file path to load before deploy (absolute or relative to WORKING_DIRECTORY).
+    default: null
   - name: STACK_NAME
     description: CloudFormation stack name. Defaults to the repository name.
     default: null
   - name: SAM_ADDOPTS
-    description: Additional arguments passed verbatim to `sam deploy`.
+    description: Additional arguments passed to `sam deploy` (for example --config-file/--config-env and --parameter-overrides).
     default: ""
   - name: DEBUG
     description: Enable verbose logging.

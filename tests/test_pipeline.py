@@ -2,12 +2,19 @@
 
 from __future__ import annotations
 
+import os
+from typing import TYPE_CHECKING
+
 import pytest
 
+from sam_pipeline.__main__ import _load_pipeline_dotenv
 from sam_pipeline.accounts import AccountTarget, parse_account_ids
 from sam_pipeline.exceptions import InvalidAccountConfigError
 from sam_pipeline.pipe import SamPipeline
 from sam_pipeline.utils import bool_from_env, get_repo_name, running_in_ci
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 # ──────────────────────────────────────────────────────────────────────────────
 # parse_account_ids
@@ -165,3 +172,60 @@ class TestSamPipelineValidation:
         pipe = SamPipeline()
         pipe._vars = pipe._load_and_validate()  # noqa: SLF001
         assert pipe._resolve_stack_name() == "my-custom-stack"  # noqa: S101,SLF001
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Dotenv loading
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class TestDotenvLoading:
+    def test_loads_stage_file_from_working_directory(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        env_file = tmp_path / ".env.dev"
+        env_file.write_text("STAGE_FROM_FILE=dev\n", encoding="utf-8")
+
+        monkeypatch.setenv("WORKING_DIRECTORY", str(tmp_path))
+        monkeypatch.setenv("STAGE", "dev")
+        monkeypatch.delenv("STAGE_FROM_FILE", raising=False)
+
+        _load_pipeline_dotenv()
+
+        assert os.environ.get("STAGE_FROM_FILE") == "dev"  # noqa: S101
+
+    def test_env_file_takes_priority_over_stage(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        stage_file = tmp_path / ".env.dev"
+        explicit_file = tmp_path / ".env.custom"
+        stage_file.write_text("KEY=from-stage\n", encoding="utf-8")
+        explicit_file.write_text("KEY=from-custom\n", encoding="utf-8")
+
+        monkeypatch.setenv("WORKING_DIRECTORY", str(tmp_path))
+        monkeypatch.setenv("STAGE", "dev")
+        monkeypatch.setenv("ENV_FILE", ".env.custom")
+        monkeypatch.delenv("KEY", raising=False)
+
+        _load_pipeline_dotenv()
+
+        assert os.environ.get("KEY") == "from-custom"  # noqa: S101
+
+    def test_existing_environment_value_is_not_overridden(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        tmp_path: Path,
+    ) -> None:
+        env_file = tmp_path / ".env"
+        env_file.write_text("LOCKED_KEY=from-file\n", encoding="utf-8")
+
+        monkeypatch.setenv("WORKING_DIRECTORY", str(tmp_path))
+        monkeypatch.setenv("LOCKED_KEY", "from-env")
+
+        _load_pipeline_dotenv()
+
+        assert os.environ.get("LOCKED_KEY") == "from-env"  # noqa: S101
