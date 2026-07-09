@@ -173,6 +173,21 @@ class TestSamPipelineValidation:
         pipe._vars = pipe._load_and_validate()  # noqa: SLF001
         assert pipe._resolve_stack_name() == "my-custom-stack"  # noqa: S101,SLF001
 
+    def test_expand_sam_addopts_replaces_dollar_vars(self) -> None:
+        pipe = SamPipeline()
+        env = {
+            "STAGE": "dev",
+            "SECRET_VAL": "abc",
+        }
+        value = "--config-env $STAGE --parameter-overrides Stage=${STAGE} Key=$SECRET_VAL"
+        expanded = pipe._expand_sam_addopts(value, env)  # noqa: SLF001
+        assert expanded == "--config-env dev --parameter-overrides Stage=dev Key=abc"  # noqa: S101
+
+    def test_expand_sam_addopts_uses_empty_for_missing_vars(self) -> None:
+        pipe = SamPipeline()
+        expanded = pipe._expand_sam_addopts("Stage=$MISSING", {})  # noqa: SLF001
+        assert expanded == "Stage="  # noqa: S101
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Dotenv loading

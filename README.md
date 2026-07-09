@@ -315,7 +315,7 @@ env:
     --config-file samconfig.toml
     --config-env $STAGE
     --parameter-overrides
-    Stage=${{ env.STAGE }}
+    Stage=$STAGE
     ${{ secrets.SAM_PARAMETER_OVERRIDES }}
 ```
 

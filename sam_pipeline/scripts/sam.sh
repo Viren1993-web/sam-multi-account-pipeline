@@ -11,7 +11,7 @@ source_nvm() {
     source "${NVM_DIR}/nvm.sh"
   else
     echo "ERROR: NVM not found at ${NVM_DIR}/nvm.sh" >&2
-    exit 3
+    exit 43
   fi
 }
 
@@ -21,7 +21,7 @@ sam_build() {
 
   echo "▶ ${build_command[*]}"
   (
-    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 2; }
+    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 42; }
     "${build_command[@]}"
   )
 }
@@ -50,7 +50,7 @@ sam_deploy() {
 
   echo "▶ ${deploy_command[*]}"
   (
-    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 2; }
+    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 42; }
     "${deploy_command[@]}"
   )
 }
