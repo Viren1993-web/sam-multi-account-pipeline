@@ -188,6 +188,29 @@ class TestSamPipelineValidation:
         expanded = pipe._expand_sam_addopts("Stage=$MISSING", {})  # noqa: SLF001
         assert expanded == "Stage="  # noqa: S101
 
+    def test_sam_options_for_validate_removes_parameter_overrides(self) -> None:
+        pipe = SamPipeline()
+        opts = (
+            "--config-file samconfig.toml "
+            "--config-env dev "
+            "--parameter-overrides Stage=dev Name=api "
+            "--region us-east-1"
+        )
+        filtered = pipe._sam_options_for_action("validate", opts)  # noqa: SLF001
+        assert filtered == "--config-file samconfig.toml --config-env dev --region us-east-1"  # noqa: S101
+
+    def test_sam_options_for_non_validate_unchanged(self) -> None:
+        pipe = SamPipeline()
+        opts = "--config-env dev --parameter-overrides Stage=dev"
+        filtered = pipe._sam_options_for_action("deploy", opts)  # noqa: SLF001
+        assert filtered == opts  # noqa: S101
+
+    def test_sam_options_for_validate_supports_equals_style_options(self) -> None:
+        pipe = SamPipeline()
+        opts = "--config-file=samconfig.toml --config-env=dev --region=us-east-1"
+        filtered = pipe._sam_options_for_action("validate", opts)  # noqa: SLF001
+        assert filtered == opts  # noqa: S101
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Dotenv loading
@@ -244,4 +267,3 @@ class TestDotenvLoading:
         _load_pipeline_dotenv()
 
         assert os.environ.get("LOCKED_KEY") == "from-env"  # noqa: S101
-

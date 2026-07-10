@@ -36,6 +36,7 @@ jobs:
 
           STACK_NAME: example-python-service
           WORKING_DIRECTORY: example/python
+          # Note: python -m sam_pipeline runs sam validate automatically before build/deploy.
 
           ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
           ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
