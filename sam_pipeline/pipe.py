@@ -251,10 +251,7 @@ class SamPipeline:
         while idx < len(opts):
             opt = opts[idx]
 
-            if any(
-                opt.startswith(f"{prefix}=")
-                for prefix in flags_with_value
-            ):
+            if any(opt.startswith(f"{prefix}=") for prefix in flags_with_value):
                 filtered.append(opt)
                 idx += 1
                 continue
