@@ -44,7 +44,8 @@ jobs:
             --config-env $STAGE
             --parameter-overrides
             Stage=$STAGE
-            ${{ secrets.SAM_PARAMETER_OVERRIDES }}
+            $SAM_PARAMETER_OVERRIDES
+          SAM_PARAMETER_OVERRIDES: ${{ secrets.SAM_PARAMETER_OVERRIDES }}
           # Store as one space-separated line in GitHub Secret: SAM_PARAMETER_OVERRIDES
 
           # ── OIDC (injected automatically by GitHub Actions) ────────────────

@@ -310,16 +310,18 @@ env:
   NODE_VERSION: "24"
   WORKING_DIRECTORY: .
   STAGE: dev
-  STACK_NAME: eyecue-heartbeat-service-sam-${{ env.STAGE }}
+  STACK_NAME: eyecue-heartbeat-service-sam-$STAGE
+  SAM_PARAMETER_OVERRIDES: ${{ secrets.SAM_PARAMETER_OVERRIDES }}
   SAM_ADDOPTS: >-
     --config-file samconfig.toml
     --config-env $STAGE
     --parameter-overrides
     Stage=$STAGE
-    ${{ secrets.SAM_PARAMETER_OVERRIDES }}
+    $SAM_PARAMETER_OVERRIDES
 ```
 
-Set GitHub Secret `SAM_PARAMETER_OVERRIDES.
+Set GitHub Secret `SAM_PARAMETER_OVERRIDES` as one space-separated list of key/value
+overrides (for example `Key1=value1 Key2=value2`).
 
 The runner now supports both:
 
@@ -400,6 +402,7 @@ No SAM CLI installation. No credential management. Just environment variables.
 | `STAGE` | No | — | Stage name used to load `.env.<STAGE>` and in deploy args |
 | `ENV_FILE` | No | — | Explicit dotenv path to load (absolute or relative to `WORKING_DIRECTORY`) |
 | `STACK_NAME` | No | repo name | CloudFormation stack name |
+| `SAM_PARAMETER_OVERRIDES` | No | `""` | Convenience variable containing space-separated SAM parameter overrides |
 | `SAM_ADDOPTS` | No | `""` | Extra `sam deploy` args (for example `--config-env` and `--parameter-overrides`) |
 | `DEBUG` | No | `false` | Enable verbose logging |
 
