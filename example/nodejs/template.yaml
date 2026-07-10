@@ -11,8 +11,6 @@ Parameters:
     Description: Deployment stage (for example dev, stg, prod).
 
 Globals:
-  Api:
-    StageName: !Ref Stage
   Function:
     Timeout: 30
     MemorySize: 256
@@ -21,6 +19,11 @@ Globals:
       - arm64
 
 Resources:
+  ServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -36,13 +39,14 @@ Resources:
         HelloWorld:
           Type: Api
           Properties:
+            RestApiId: !Ref ServiceApi
             Path: /hello
             Method: get
 
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/hello/"
+    Value: !Sub "https://${ServiceApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/hello/"
   FunctionArn:
     Description: Lambda function ARN
     Value: !GetAtt HelloWorldFunction.Arn

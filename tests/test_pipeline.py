@@ -9,7 +9,7 @@ import pytest
 
 from sam_pipeline.__main__ import _load_pipeline_dotenv
 from sam_pipeline.accounts import AccountTarget, parse_account_ids
-from sam_pipeline.exceptions import InvalidAccountConfigError
+from sam_pipeline.exceptions import InvalidAccountConfigError, SamValidateError, SubprocessError
 from sam_pipeline.pipe import SamPipeline
 from sam_pipeline.utils import bool_from_env, get_repo_name, running_in_ci
 
@@ -244,3 +244,80 @@ class TestDotenvLoading:
         _load_pipeline_dotenv()
 
         assert os.environ.get("LOCKED_KEY") == "from-env"  # noqa: S101
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# SAM validate flow
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class TestSamValidateFlow:
+    def test_deploy_runs_validate_before_build_and_deploy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        pipe = SamPipeline()
+        pipe._vars = {
+            "DEPLOYER_ROLE_NAME": "DeployerAccess",
+            "DEBUG": False,
+            "STACK_NAME": "demo-stack",
+            "RUNTIME_LANGUAGE": "nodejs",
+            "NODE_VERSION": "24",
+            "PYTHON_VERSION": "3.13.1",
+            "WORKING_DIRECTORY": ".",
+            "SAM_ADDOPTS": "--config-env dev",
+        }
+
+        calls: list[str] = []
+
+        monkeypatch.setattr("sam_pipeline.pipe.assume_role_session", lambda **_: object())
+        monkeypatch.setattr(
+            "sam_pipeline.pipe.session_to_env",
+            lambda *_: {
+                "AWS_ACCESS_KEY_ID": "x",
+                "AWS_SECRET_ACCESS_KEY": "y",
+                "AWS_SESSION_TOKEN": "z",
+                "AWS_REGION": "us-east-1",
+            },
+        )
+
+        def fake_run_sam(
+            action: str,
+            stack_name: str,
+            region: str,
+            env: dict[str, str],
+            account_id: str,
+        ) -> None:
+            _ = (stack_name, region, env, account_id)
+            calls.append(action)
+
+        monkeypatch.setattr(pipe, "_run_sam", fake_run_sam)
+
+        pipe._deploy(AccountTarget(account_id="123456789012", region="us-east-1"))  # noqa: SLF001
+
+        assert calls == ["validate", "build", "deploy"]  # noqa: S101
+
+    def test_run_sam_maps_validate_failure_to_sam_validate_error(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        pipe = SamPipeline()
+        pipe._vars = {
+            "RUNTIME_LANGUAGE": "nodejs",
+            "NODE_VERSION": "24",
+            "PYTHON_VERSION": "3.13.1",
+            "WORKING_DIRECTORY": ".",
+            "SAM_ADDOPTS": "",
+        }
+
+        def fake_run_command(*args: str, **kwargs: object) -> None:
+            _ = (args, kwargs)
+            raise SubprocessError(returncode=2, command="sam validate")
+
+        monkeypatch.setattr("sam_pipeline.pipe.run_command", fake_run_command)
+
+        with pytest.raises(SamValidateError, match="sam validate failed"):
+            pipe._run_sam(  # noqa: SLF001
+                "validate",
+                "demo-stack",
+                "us-east-1",
+                {},
+                "123456789012",
+            )
