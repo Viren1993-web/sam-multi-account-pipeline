@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import os
 import re
-import shlex
 import sys
 from pathlib import Path
 from typing import Any, cast
@@ -18,7 +17,6 @@ from sam_pipeline.exceptions import (
     NvmNotFoundError,
     SamBuildError,
     SamDeployError,
-    SamValidateError,
     SubprocessError,
     ValidationError,
     WorkingDirectoryNotFoundError,
@@ -62,7 +60,7 @@ class SamPipeline:
         for target in accounts:
             try:
                 self._deploy(target)
-            except (SamValidateError, SamBuildError, SamDeployError) as exc:
+            except (SamBuildError, SamDeployError) as exc:
                 logger.error("Deployment failed: %s", exc)  # noqa: TRY400
                 failed.append(target)
 
@@ -171,7 +169,6 @@ class SamPipeline:
         stack_name = self._resolve_stack_name()
         logger.info("Deploying stack '%s' to %s", stack_name, target.account_id)
 
-        self._run_sam("validate", stack_name, target.region, env, target.account_id)
         self._run_sam("build", stack_name, target.region, env, target.account_id)
         self._run_sam("deploy", stack_name, target.region, env, target.account_id)
 
@@ -187,7 +184,6 @@ class SamPipeline:
     ) -> None:
         script = (self._scripts_dir / "sam.sh").as_posix()
         sam_addopts = self._expand_sam_addopts(self._get("SAM_ADDOPTS") or "", env)
-        action_addopts = self._sam_options_for_action(action, sam_addopts)
         try:
             run_command(
                 script,
@@ -198,7 +194,7 @@ class SamPipeline:
                 cast("str", self._get("NODE_VERSION")),
                 cast("str", self._get("PYTHON_VERSION")),
                 self._get("WORKING_DIRECTORY") or ".",
-                action_addopts,
+                sam_addopts,
                 env=env,
             )
         except SubprocessError as exc:
@@ -207,8 +203,6 @@ class SamPipeline:
                 raise WorkingDirectoryNotFoundError(working_dir) from exc
             if exc.returncode == _EXIT_NVM_NOT_FOUND:
                 raise NvmNotFoundError from exc
-            if action == "validate":
-                raise SamValidateError(exc.returncode) from exc
             if action == "build":
                 raise SamBuildError(exc.returncode) from exc
             raise SamDeployError(account_id, exc.returncode) from exc
@@ -227,62 +221,3 @@ class SamPipeline:
             return env.get(var_name, "")
 
         return _ENV_VAR_PATTERN.sub(replace, value)
-
-    def _sam_options_for_action(self, action: str, value: str) -> str:
-        """Return action-safe SAM options derived from ``SAM_ADDOPTS``."""
-        if action != "validate":
-            return value
-
-        opts = shlex.split(value)
-        flags_with_value = {
-            "--config-file",
-            "--config-env",
-            "--profile",
-            "--region",
-            "--template",
-            "--template-file",
-            "-t",
-        }
-        flags_without_value = {
-            "--beta-features",
-            "--debug",
-            "--lint",
-            "--no-beta-features",
-        }
-
-        filtered: list[str] = []
-        idx = 0
-        while idx < len(opts):
-            opt = opts[idx]
-
-            if any(
-                opt.startswith(f"{prefix}=")
-                for prefix in flags_with_value
-            ):
-                filtered.append(opt)
-                idx += 1
-                continue
-
-            if opt in flags_without_value:
-                filtered.append(opt)
-                idx += 1
-                continue
-
-            if opt in flags_with_value:
-                filtered.append(opt)
-                if idx + 1 < len(opts):
-                    filtered.append(opts[idx + 1])
-                    idx += 2
-                    continue
-                idx += 1
-                continue
-
-            if opt == "--parameter-overrides":
-                idx += 1
-                while idx < len(opts) and not opts[idx].startswith("-"):
-                    idx += 1
-                continue
-
-            idx += 1
-
-        return " ".join(filtered)

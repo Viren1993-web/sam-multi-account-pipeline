@@ -24,10 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate SAM template
-        working-directory: example/python
-        run: sam validate
-
       - name: Deploy
         env:
           # Store AWS_ACCOUNT_IDS as a GitHub Actions Variable (Settings -> Variables)
@@ -40,7 +36,6 @@ jobs:
 
           STACK_NAME: example-python-service
           WORKING_DIRECTORY: example/python
-          # Note: python -m sam_pipeline runs sam validate automatically before build/deploy.
 
           ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
           ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}

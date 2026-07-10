@@ -14,13 +14,6 @@ class SamBuildError(SamPipelineError):
         super().__init__(f"sam build failed with return code {returncode}")
 
 
-class SamValidateError(SamPipelineError):
-    """SAM validate failed."""
-
-    def __init__(self, returncode: int) -> None:
-        super().__init__(f"sam validate failed with return code {returncode}")
-
-
 class SamDeployError(SamPipelineError):
     """SAM deploy failed."""
 
