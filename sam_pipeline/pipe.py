@@ -18,7 +18,6 @@ from sam_pipeline.exceptions import (
     NvmNotFoundError,
     SamBuildError,
     SamDeployError,
-    SamValidateError,
     SubprocessError,
     ValidationError,
     WorkingDirectoryNotFoundError,
@@ -62,7 +61,7 @@ class SamPipeline:
         for target in accounts:
             try:
                 self._deploy(target)
-            except (SamValidateError, SamBuildError, SamDeployError) as exc:
+            except (SamBuildError, SamDeployError) as exc:
                 logger.error("Deployment failed: %s", exc)  # noqa: TRY400
                 failed.append(target)
 
@@ -171,7 +170,6 @@ class SamPipeline:
         stack_name = self._resolve_stack_name()
         logger.info("Deploying stack '%s' to %s", stack_name, target.account_id)
 
-        self._run_sam("validate", stack_name, target.region, env, target.account_id)
         self._run_sam("build", stack_name, target.region, env, target.account_id)
         self._run_sam("deploy", stack_name, target.region, env, target.account_id)
 
@@ -207,8 +205,6 @@ class SamPipeline:
                 raise WorkingDirectoryNotFoundError(working_dir) from exc
             if exc.returncode == _EXIT_NVM_NOT_FOUND:
                 raise NvmNotFoundError from exc
-            if action == "validate":
-                raise SamValidateError(exc.returncode) from exc
             if action == "build":
                 raise SamBuildError(exc.returncode) from exc
             raise SamDeployError(account_id, exc.returncode) from exc

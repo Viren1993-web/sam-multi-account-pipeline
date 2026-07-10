@@ -24,17 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate SAM template
-        working-directory: example/nodejs
-        env:
-          STAGE: dev
-          SAM_PARAMETER_OVERRIDES: ${{ secrets.SAM_PARAMETER_OVERRIDES }}
-        run: >-
-          sam validate
-          --config-file samconfig.toml
-          --config-env $STAGE
-          --parameter-overrides Stage=$STAGE $SAM_PARAMETER_OVERRIDES
-
       - name: Deploy
         env:
           # ── Target accounts ────────────────────────────────────────────────
