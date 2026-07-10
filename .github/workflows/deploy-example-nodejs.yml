@@ -24,17 +24,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate SAM template
-        working-directory: example/nodejs
-        env:
-          STAGE: dev
-          SAM_PARAMETER_OVERRIDES: ${{ secrets.SAM_PARAMETER_OVERRIDES }}
-        run: >-
-          sam validate
-          --config-file samconfig.toml
-          --config-env $STAGE
-          --parameter-overrides Stage=$STAGE $SAM_PARAMETER_OVERRIDES
-
       - name: Deploy
         env:
           # ── Target accounts ────────────────────────────────────────────────
@@ -59,6 +48,7 @@ jobs:
             $SAM_PARAMETER_OVERRIDES
           SAM_PARAMETER_OVERRIDES: ${{ secrets.SAM_PARAMETER_OVERRIDES }}
           # Store as one space-separated line in GitHub Secret: SAM_PARAMETER_OVERRIDES
+          # Note: python -m sam_pipeline runs sam validate automatically before build/deploy.
 
           # ── OIDC (injected automatically by GitHub Actions) ────────────────
           ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}

@@ -188,6 +188,29 @@ class TestSamPipelineValidation:
         expanded = pipe._expand_sam_addopts("Stage=$MISSING", {})  # noqa: SLF001
         assert expanded == "Stage="  # noqa: S101
 
+    def test_sam_options_for_validate_removes_parameter_overrides(self) -> None:
+        pipe = SamPipeline()
+        opts = (
+            "--config-file samconfig.toml "
+            "--config-env dev "
+            "--parameter-overrides Stage=dev Name=api "
+            "--region us-east-1"
+        )
+        filtered = pipe._sam_options_for_action("validate", opts)  # noqa: SLF001
+        assert filtered == "--config-file samconfig.toml --config-env dev --region us-east-1"  # noqa: S101
+
+    def test_sam_options_for_non_validate_unchanged(self) -> None:
+        pipe = SamPipeline()
+        opts = "--config-env dev --parameter-overrides Stage=dev"
+        filtered = pipe._sam_options_for_action("deploy", opts)  # noqa: SLF001
+        assert filtered == opts  # noqa: S101
+
+    def test_sam_options_for_validate_supports_equals_style_options(self) -> None:
+        pipe = SamPipeline()
+        opts = "--config-file=samconfig.toml --config-env=dev --region=us-east-1"
+        filtered = pipe._sam_options_for_action("validate", opts)  # noqa: SLF001
+        assert filtered == opts  # noqa: S101
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Dotenv loading
@@ -252,9 +275,12 @@ class TestDotenvLoading:
 
 
 class TestSamValidateFlow:
-    def test_deploy_runs_validate_before_build_and_deploy(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_deploy_runs_validate_before_build_and_deploy(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
         pipe = SamPipeline()
-        pipe._vars = {
+        pipe._vars = {  # noqa: SLF001
             "DEPLOYER_ROLE_NAME": "DeployerAccess",
             "DEBUG": False,
             "STACK_NAME": "demo-stack",
@@ -299,7 +325,7 @@ class TestSamValidateFlow:
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         pipe = SamPipeline()
-        pipe._vars = {
+        pipe._vars = {  # noqa: SLF001
             "RUNTIME_LANGUAGE": "nodejs",
             "NODE_VERSION": "24",
             "PYTHON_VERSION": "3.13.1",
