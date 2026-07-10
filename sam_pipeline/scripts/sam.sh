@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sam.sh
-# Runs `sam build` or `sam deploy` with the correct runtime activated.
+# Runs `sam validate`, `sam build`, or `sam deploy` with the correct runtime activated.
 
 set -o errexit
 set -o pipefail
@@ -11,7 +11,7 @@ source_nvm() {
     source "${NVM_DIR}/nvm.sh"
   else
     echo "ERROR: NVM not found at ${NVM_DIR}/nvm.sh" >&2
-    exit 3
+    exit 43
   fi
 }
 
@@ -21,8 +21,27 @@ sam_build() {
 
   echo "▶ ${build_command[*]}"
   (
-    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 2; }
+    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 42; }
     "${build_command[@]}"
+  )
+}
+
+sam_validate() {
+  local sam_addopts=$1
+  local working_directory=${2:-.}
+
+  local -a validate_command=(sam validate)
+
+  if [[ -n "${sam_addopts}" ]]; then
+    local -a extra_opts=()
+    read -r -a extra_opts <<<"${sam_addopts}"
+    validate_command+=("${extra_opts[@]}")
+  fi
+
+  echo "▶ ${validate_command[*]}"
+  (
+    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 42; }
+    "${validate_command[@]}"
   )
 }
 
@@ -50,7 +69,7 @@ sam_deploy() {
 
   echo "▶ ${deploy_command[*]}"
   (
-    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 2; }
+    cd "${working_directory}" || { echo "ERROR: directory '${working_directory}' not found" >&2; exit 42; }
     "${deploy_command[@]}"
   )
 }
@@ -65,8 +84,8 @@ main() {
   local working_directory=${7:-.}
   local sam_addopts=${8:-}
 
-  if [[ "${action}" != "build" && "${action}" != "deploy" ]]; then
-    echo "ERROR: Invalid action '${action}'. Must be 'build' or 'deploy'." >&2
+  if [[ "${action}" != "validate" && "${action}" != "build" && "${action}" != "deploy" ]]; then
+    echo "ERROR: Invalid action '${action}'. Must be 'validate', 'build' or 'deploy'." >&2
     exit 1
   fi
 
@@ -85,7 +104,9 @@ main() {
     echo "SAM CLI : $(sam --version)"
   fi
 
-  if [[ "${action}" == "build" ]]; then
+  if [[ "${action}" == "validate" ]]; then
+    sam_validate "${sam_addopts}" "${working_directory}"
+  elif [[ "${action}" == "build" ]]; then
     sam_build "${working_directory}"
   else
     sam_deploy "${stack_name}" "${region}" "${sam_addopts}" "${working_directory}"

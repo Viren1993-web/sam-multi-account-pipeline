@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, cast
@@ -16,6 +17,7 @@ from sam_pipeline.exceptions import (
     NvmNotFoundError,
     SamBuildError,
     SamDeployError,
+    SamValidateError,
     SubprocessError,
     ValidationError,
     WorkingDirectoryNotFoundError,
@@ -26,8 +28,9 @@ from sam_pipeline.utils import bool_from_env, get_repo_name, run_command
 logger = logging.getLogger(__name__)
 
 # Exit codes returned by sam.sh
-_EXIT_WORKING_DIR_NOT_FOUND = 2
-_EXIT_NVM_NOT_FOUND = 3
+_EXIT_WORKING_DIR_NOT_FOUND = 42
+_EXIT_NVM_NOT_FOUND = 43
+_ENV_VAR_PATTERN = re.compile(r"\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 class SamPipeline:
@@ -58,7 +61,7 @@ class SamPipeline:
         for target in accounts:
             try:
                 self._deploy(target)
-            except (SamBuildError, SamDeployError) as exc:
+            except (SamValidateError, SamBuildError, SamDeployError) as exc:
                 logger.error("Deployment failed: %s", exc)  # noqa: TRY400
                 failed.append(target)
 
@@ -167,6 +170,7 @@ class SamPipeline:
         stack_name = self._resolve_stack_name()
         logger.info("Deploying stack '%s' to %s", stack_name, target.account_id)
 
+        self._run_sam("validate", stack_name, target.region, env, target.account_id)
         self._run_sam("build", stack_name, target.region, env, target.account_id)
         self._run_sam("deploy", stack_name, target.region, env, target.account_id)
 
@@ -181,6 +185,7 @@ class SamPipeline:
         account_id: str,
     ) -> None:
         script = (self._scripts_dir / "sam.sh").as_posix()
+        sam_addopts = self._expand_sam_addopts(self._get("SAM_ADDOPTS") or "", env)
         try:
             run_command(
                 script,
@@ -191,7 +196,7 @@ class SamPipeline:
                 cast("str", self._get("NODE_VERSION")),
                 cast("str", self._get("PYTHON_VERSION")),
                 self._get("WORKING_DIRECTORY") or ".",
-                self._get("SAM_ADDOPTS") or "",
+                sam_addopts,
                 env=env,
             )
         except SubprocessError as exc:
@@ -200,6 +205,8 @@ class SamPipeline:
                 raise WorkingDirectoryNotFoundError(working_dir) from exc
             if exc.returncode == _EXIT_NVM_NOT_FOUND:
                 raise NvmNotFoundError from exc
+            if action == "validate":
+                raise SamValidateError(exc.returncode) from exc
             if action == "build":
                 raise SamBuildError(exc.returncode) from exc
             raise SamDeployError(account_id, exc.returncode) from exc
@@ -207,3 +214,14 @@ class SamPipeline:
     def _resolve_stack_name(self) -> str:
         stack_name: str | None = self._get("STACK_NAME")
         return stack_name or get_repo_name()
+
+    def _expand_sam_addopts(self, value: str, env: dict[str, str]) -> str:
+        """Expand ``$VAR`` and ``${VAR}`` tokens in SAM_ADDOPTS from ``env``."""
+
+        def replace(match: re.Match[str]) -> str:
+            var_name = match.group(1) or match.group(2)
+            if var_name is None:
+                return ""
+            return env.get(var_name, "")
+
+        return _ENV_VAR_PATTERN.sub(replace, value)

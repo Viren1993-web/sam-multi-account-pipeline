@@ -4,6 +4,12 @@ Description: >
   nodejs-service
   A simple Hello World Lambda function — Node.js example for sam-pipeline.
 
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    Description: Deployment stage (for example dev, stg, prod).
+
 Globals:
   Function:
     Timeout: 30
@@ -13,28 +19,34 @@ Globals:
       - arm64
 
 Resources:
+  ServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+
   HelloWorldFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: HelloWorldFunction
+      FunctionName: !Sub HelloWorldFunction-${Stage}
       CodeUri: src/
       Handler: handler.handler
       Description: Returns a greeting.
       Environment:
         Variables:
           GREETING_MESSAGE: "Hello from AWS Lambda!"
-          ENVIRONMENT: Prod
+          ENVIRONMENT: !Ref Stage
       Events:
         HelloWorld:
           Type: Api
           Properties:
+            RestApiId: !Ref ServiceApi
             Path: /hello
             Method: get
 
 Outputs:
   ApiEndpoint:
     Description: API Gateway endpoint URL
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Value: !Sub "https://${ServiceApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/hello/"
   FunctionArn:
     Description: Lambda function ARN
     Value: !GetAtt HelloWorldFunction.Arn
